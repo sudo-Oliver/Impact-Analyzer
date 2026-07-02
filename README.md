@@ -35,6 +35,7 @@ API calls, no provider plugins, no internet access required.
 # 1. Install
 brew tap sudo-Oliver/tap
 brew install eia
+brew install graphviz        # only needed for: eia graph --view
 
 # 2. Generate a plan
 tofu plan -out=plan.binary
