@@ -157,20 +157,16 @@ impl ImpactGraph {
     }
 
     fn add_edges_recursive(&mut self, module: &PlannedModule) {
-        let module_prefix = module.address.as_deref();
-
         for res in &module.resources {
             let from_idx = match self.address_to_index.get(&res.address) {
                 Some(&idx) => idx,
                 None => continue,
             };
             for dep in &res.depends_on {
-                // depends_on entries are relative to the containing module.
-                let abs_dep = match module_prefix {
-                    Some(prefix) => format!("{}.{}", prefix, dep),
-                    None => dep.clone(),
-                };
-                let to_idx = self.get_or_insert_node(&abs_dep, NodeKind::Resource);
+                // depends_on entries in the plan JSON are already absolute addresses.
+                // Never prepend the module prefix — doing so creates double-path nodes
+                // like "module.vpc.module.vpc.aws_subnet.pub" that never match anything.
+                let to_idx = self.get_or_insert_node(dep, NodeKind::Resource);
                 if !self.graph.contains_edge(from_idx, to_idx) {
                     self.graph.add_edge(from_idx, to_idx, EdgeKind::Explicit);
                 }
