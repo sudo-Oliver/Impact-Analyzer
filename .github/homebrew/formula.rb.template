@@ -1,0 +1,29 @@
+class Eia < Formula
+  desc "Enterprise Impact Analyzer for Terraform / OpenTofu plans"
+  homepage "https://github.com/sudo-Oliver/Impact-Analyzer"
+  version "VERSION_PLACEHOLDER"
+  license "MIT"
+
+  on_macos do
+    if Hardware::CPU.arm?
+      url "URL_AARCH64"
+      sha256 "SHA_AARCH64"
+    else
+      url "URL_X86_DARWIN"
+      sha256 "SHA_X86_DARWIN"
+    end
+  end
+
+  on_linux do
+    url "URL_X86_LINUX"
+    sha256 "SHA_X86_LINUX"
+  end
+
+  def install
+    bin.install "eia"
+  end
+
+  test do
+    system "#{bin}/eia", "--version"
+  end
+end
