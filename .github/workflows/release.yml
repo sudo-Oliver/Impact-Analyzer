@@ -80,6 +80,7 @@ jobs:
           repository: sudo-Oliver/homebrew-tap
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           path: homebrew-tap
+          ref: master
 
       - name: Render formula from template
         env:
