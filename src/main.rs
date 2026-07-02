@@ -1,6 +1,7 @@
 mod graph;
 mod parser;
 mod ui;
+mod version;
 
 use std::io::{self, IsTerminal, Write};
 use std::path::{Path, PathBuf};
@@ -34,6 +35,21 @@ enum Command {
     ///
     /// Designed for CI/CD pipelines.
     /// Exit 0 = no issues, 1 = technical error, 2 = validation issues found.
+    ///
+    /// SCOPE: This tool analyzes the explicit and implicit dependencies that
+    /// OpenTofu / Terraform records in the JSON plan. Dependencies expressed as
+    /// hardcoded strings (e.g. a subnet ID passed as a literal instead of a
+    /// resource reference) are invisible to the provider and therefore absent
+    /// from the plan — this tool cannot detect them either.
+    ///
+    /// For complete coverage, combine eia with a static source linter:
+    ///   tflint   https://github.com/terraform-linters/tflint
+    ///   checkov  https://github.com/bridgecrewio/checkov
+    ///
+    /// Recommended pipeline order:
+    ///   1. tflint / checkov   (catches hardcoded IDs and code-style issues)
+    ///   2. tofu plan -out=plan.binary && tofu show -json plan.binary > plan.json
+    ///   3. eia check plan.json  (catches logical risks and blast radius)
     Check {
         /// Path to the JSON plan file produced by `tofu show -json`. Use '-' for stdin.
         plan: String,
@@ -43,6 +59,14 @@ enum Command {
     },
 
     /// Show every resource impacted if a specific resource changes.
+    ///
+    /// Traverses the dependency graph backwards from the given address and
+    /// returns every resource that transitively depends on it.
+    ///
+    /// SCOPE: Only dependencies visible in the JSON plan are considered.
+    /// Hardcoded resource references (string literals instead of Terraform
+    /// references) do not appear in depends_on and are therefore not tracked.
+    /// Use tflint or checkov to catch those at the source level.
     Blast {
         /// Path to the JSON plan file. Use '-' for stdin.
         plan: String,
@@ -116,7 +140,36 @@ fn run(cli: Cli) -> Result<i32> {
 // ── `eia check` ───────────────────────────────────────────────────────────────
 
 fn cmd_check(plan_path: &str, format: Format) -> Result<i32> {
+    // Kick off binary detection before parsing — the 200 ms timeout runs in
+    // parallel while we load and parse the plan, so overhead is usually zero.
+    let binary_handle = version::spawn_binary_detect();
+
     let plan = load_plan(plan_path)?;
+
+    // 1. Format-version minor-ahead check (synchronous — plan is in hand).
+    if let Some(version::VersionWarning::FormatMinorAhead { found }) =
+        version::check_format_version(&plan.format_version)
+    {
+        eprintln!(
+            "warning: plan format_version {} is newer than tested {} — \
+             unknown fields will be ignored; consider updating eia",
+            found,
+            version::MAX_KNOWN_FORMAT,
+        );
+    }
+
+    // 2. Binary version check (join the background thread — near-instant by now).
+    if let Ok(Some(ref info)) = binary_handle.join() {
+        if let Some(version::VersionWarning::BinaryAhead { ref name, ref found, ref tested_max }) =
+            version::check_binary_version(info)
+        {
+            eprintln!(
+                "warning: {} {} is newer than tested {}.x — \
+                 plan output may contain fields eia does not yet handle",
+                name, found, tested_max,
+            );
+        }
+    }
 
     let issues = validate_plan(&plan);
     let drift = detect_drift(&plan);
