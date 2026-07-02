@@ -230,13 +230,38 @@ about runtime dependency cascades that no static linter can see.
 
 ## Installation
 
+### Homebrew (recommended)
+
 ```bash
-git clone https://github.com/your-username/impact-analyzer
-cd impact-analyzer
-cargo build --release
+brew tap sudo-Oliver/tap
+brew install eia
 ```
 
-Requires Rust 1.74+. The `eia graph --view` flag additionally requires
+Update to the latest version:
+
+```bash
+brew upgrade eia
+```
+
+Uninstall:
+
+```bash
+brew uninstall eia
+brew untap sudo-Oliver/tap   # optional: remove the tap itself
+```
+
+### Build from source
+
+Requires Rust 1.74+.
+
+```bash
+git clone https://github.com/sudo-Oliver/Impact-Analyzer
+cd Impact-Analyzer
+cargo build --release
+# Binary is at ./target/release/eia
+```
+
+The `eia graph --view` flag additionally requires
 [Graphviz](https://graphviz.org) (`brew install graphviz`).
 
 ---
