@@ -32,11 +32,9 @@ API calls, no provider plugins, no internet access required.
 ## Quick start
 
 ```bash
-# 1. Build
-git clone https://github.com/your-username/impact-analyzer
-cd impact-analyzer
-cargo build --release
-export PATH="$PWD/target/release:$PATH"
+# 1. Install
+brew tap sudo-Oliver/tap
+brew install eia
 
 # 2. Generate a plan
 tofu plan -out=plan.binary
@@ -48,6 +46,12 @@ eia check plan.json
 
 If the plan is clean, exit code is `0`. If issues are found, exit code is `2` and details are
 printed to stderr. A technical error (bad file, wrong format) exits with `1`.
+
+Update to the latest version at any time:
+
+```bash
+brew upgrade eia
+```
 
 ---
 
@@ -230,24 +234,13 @@ about runtime dependency cascades that no static linter can see.
 
 ## Installation
 
-### Homebrew (recommended)
+### Homebrew
 
 ```bash
 brew tap sudo-Oliver/tap
 brew install eia
-```
-
-Update to the latest version:
-
-```bash
-brew upgrade eia
-```
-
-Uninstall:
-
-```bash
-brew uninstall eia
-brew untap sudo-Oliver/tap   # optional: remove the tap itself
+brew upgrade eia          # update
+brew uninstall eia        # remove
 ```
 
 ### Build from source
