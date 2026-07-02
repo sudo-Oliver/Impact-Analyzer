@@ -76,6 +76,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
         with:
           repository: sudo-Oliver/homebrew-tap
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
